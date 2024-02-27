@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -24,6 +25,11 @@ func (th *TaskHandler) CreateTask(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&task); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := validateTaskPayload(&task); err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -64,4 +70,20 @@ func (th *TaskHandler) GetTasksByProject(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, tasks)
+}
+
+func validateTaskPayload(task *model.Task) error {
+	if task.Name == "" {
+		return errors.New("task name required")
+	}
+
+	if task.ProjectID == 0 {
+		return errors.New("error Project ID required")
+	}
+
+	if task.AssignedToID == 0 {
+		return errors.New("error Assignee id required")
+	}
+
+	return nil
 }
